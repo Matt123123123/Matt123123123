@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
+
+function toMinutes(t) {
+  let [time, period] = [t.slice(0, -2), t.slice(-2)];
+  let [h, m] = time.includes(":") ? time.split(":") : [time, 0];
+  h = parseInt(h);
+  m = parseInt(m);
+
+  if (period === "pm" && h !== 12) h += 12;
+  if (period === "am" && h === 12) h = 0;
+
+  return h * 60 + m;
+}
+
+function toTime(mins) {
+  mins = ((mins % (24 * 60)) + 24 * 60) % (24 * 60);
+  let h = Math.floor(mins / 60);
+  let m = mins % 60;
+
+  let p = h >= 12 ? "pm" : "am";
+  h = h % 12;
+  if (h === 0) h = 12;
+
+  return m > 0 ? `${h}:${m.toString().padStart(2, "0")}${p}` : `${h}${p}`;
+}
+
+export default function MorningRoutinePlanner() {
+  const [arrival, setArrival] = useState("");
+  const [result, setResult] = useState(null);
+
+  const calculateSchedule = () => {
+    if (!arrival) return;
+
+    const arrive = toMinutes(arrival);
+    const run = arrive - 90;
+    const shower = arrive - 180;
+    const alarm = arrive - 300;
+    const sleepEnd = alarm - 480;
+    const sleepStart = alarm - 600;
+
+    setResult({
+      sleepStart: toTime(sleepStart),
+      sleepEnd: toTime(sleepEnd),
+      alarm: toTime(alarm),
+      shower: toTime(shower),
+      run: toTime(run),
+      arrive: toTime(arrive),
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-blue-200 flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <Card className="rounded-2xl shadow-xl">
+          <CardContent className="p-6 space-y-6">
+            <h1 className="text-2xl font-bold text-center">Morning Routine Planner</h1>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Arrival Time (e.g. 7:30am)</label>
+              <Input
+                placeholder="Enter time..."
+                value={arrival}
+                onChange={(e) => setArrival(e.target.value.toLowerCase())}
+              />
+            </div>
+
+            <Button onClick={calculateSchedule} className="w-full rounded-2xl">
+              Generate Schedule
+            </Button>
+
+            {result && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-3 text-center text-lg"
+              >
+                <div>😴 {result.sleepStart} - {result.sleepEnd} (8–10 hrs sleep)</div>
+                <div>⏰ Alarm: {result.alarm}</div>
+                <div>🚿 Shower: {result.shower}</div>
+                <div>🏃 Run: {result.run}</div>
+                <div>🎉 Arrival: {result.arrive}</div>
+              </motion.div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
